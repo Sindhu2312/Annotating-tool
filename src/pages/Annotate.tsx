@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAnnotationsStore } from "../store/AnnotationsStore";
 import { useNavigate } from "react-router-dom";
+// import { RightPanel } from "./RightPanel/RightPanel";
 
 const Annotatepage = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -19,27 +20,49 @@ const Annotatepage = () => {
     ];
 
     const resizeCanvasToImage = () => {
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
+        const canvas = canvasRef.current;
+        const img = imgRef.current;
 
-    if (!canvas || !img) return;
+        if (!canvas || !img) return;
 
-    canvas.width = img.clientWidth;
-    canvas.height = img.clientHeight;
+        canvas.width = img.naturalWidth;  //original image size
+        canvas.height = img.naturalHeight;
 
-    const context = canvas.getContext("2d");
-    if(context){
-        context.lineWidth = 3;
-        context.lineJoin = "round";
-        context.lineCap = "round";
-        setCtx(context);
-    }
-  };
+        canvas.style.width = img.clientWidth + "px"; //displayed size of image
+        canvas.style.height = img.clientHeight + "px";
+
+        canvas.style.left = img.offsetLeft + "px"; // distace from nearest parent 
+        canvas.style.top = img.offsetTop + "px";
+
+        const context = canvas.getContext("2d");
+        if(context){
+            const scaleX =  img.naturalWidth / img.clientWidth;
+            const scaleY =  img.naturalHeight / img.clientHeight;
+            context.setTransform(scaleX, 0, 0, scaleY, 0, 0);  // b,c=0 undistored drawing
+            // e,f=0 no translation
+
+            context.lineWidth = 3;
+            context.lineJoin = "round";
+            context.lineCap = "round";
+            setCtx(context);
+        }
+    };
 
   useEffect(() => {
     resizeCanvasToImage();
     window.addEventListener("resize", resizeCanvasToImage);
-    return () => window.removeEventListener("resize", resizeCanvasToImage);
+
+    const handleGlobalMouseUp = () => {
+        setDrawing(false);
+    }
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    window.addEventListener("touchend", handleGlobalMouseUp);
+    
+    return () => {
+        window.removeEventListener("resize", resizeCanvasToImage);
+        window.removeEventListener("mouseup", handleGlobalMouseUp);  //to clean up on unmount
+        window.removeEventListener("touchend", handleGlobalMouseUp);
+    };
   }, []);
 
   const startDrawing = (e:any) => {
@@ -67,41 +90,45 @@ const Annotatepage = () => {
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
-    setDrawing(false);
-  };
 
     return (
-        <div className="flex h-screen">
-            <div className="flex-1 p-4 flex items-center justify-center">
-                <div className="relative">
-                <img 
-                    ref={imgRef}
-                    src={image.file} 
-                    alt={image.Filename} 
-                    className="max-w-full max-h-full object-contain"
-                    onLoad={resizeCanvasToImage} 
-                />
-                <canvas
-                    ref={canvasRef}
-                    className="absolute top-0 left-0"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                />
+            <div className="flex h-screen overflow-hidden">
+                <div className="flex-1 p-4 flex items-center justify-center overflow-hidden min-w-0">
+                    <div
+                        className="relative select-none bg-white shadow rounded-lg flex items-center justify-center w-[900px] h-[700px] max-w-full max-h-[calc(100vh-5rem)] overflow-auto"
+                    >
+                        <img
+                            ref={imgRef}
+                            src={image.file}
+                            alt={image.Filename}
+                            className="block select-none pointer-events-none max-w-full max-h-full object-contain"
+                            onLoad={resizeCanvasToImage}
+                            draggable={false}
+                        />
+                        <canvas
+                            ref={canvasRef}
+                            className="absolute"
+                            style={{ 
+                                left: `${(imgRef.current?.offsetLeft || 0)}px`,
+                                top: `${(imgRef.current?.offsetTop || 0)}px`
+                            }}
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            // onMouseUp={stopDrawing}
+                            // onMouseLeave={stopDrawing}
+                            onTouchStart={startDrawing}
+                            onTouchMove={draw}
+                            // onTouchEnd={stopDrawing}
+                        />
+                    </div>
                 </div>
-            </div>
-            <div className="w-64 bg-gray-50 p-4 border-l flex flex-col">
+            <div className="w-84 bg-gray-100 p-4 border-xs flex flex-col shrink-0">
                 <h2 className="text-lg font-bold mb-4 break-all">{image.Filename}</h2>
                 <div className="space-y-2">
                     {colors.map((color)=>{
                         return (<div key={color.name}>
                             <div className={`w-5 h-5 rounded-full ${color.dot}`}
-                            onClick={() => setStrokeColor(color.name)}
+                            onClick={() => setStrokeColor(color.name.toLowerCase())}
                             ></div>
                         </div>
                         )
@@ -119,12 +146,13 @@ const Annotatepage = () => {
                         Clear Annotations
                     </button>
                 </div>
-                <div className="mt-auto">
+                {/* <div className="mt-auto">
                     <button onClick={() => navigate("/")}>
                         Home
                     </button>
-                </div>
+                </div> */}
             </div>
+            {/* <RightPanel colors={colors} /> */}
         </div>
     )
 }

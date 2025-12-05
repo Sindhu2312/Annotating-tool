@@ -32,7 +32,7 @@ const Uploadpage = () => {
             <div className="text-center">
                 <h2 className="text-2xl font-bold mb-6">Upload Image</h2>
                 <label className="flex flex-col items-center justify-center w-64 h-40 border-2 border-dashed border-blue-400 rounded-lg cursor-pointer hover:bg-blue-50 transition">
-                    <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                    <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="hidden" />
                     <p className="text-gray-600">Click to upload</p>
                 </label>
             </div>
