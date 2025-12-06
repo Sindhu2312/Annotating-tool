@@ -6,7 +6,7 @@ export const RightPanel = ({ colors, canvasRef, renderPage }:
      }) => {
     const { image, setStrokeColor, ctx, pdfDoc, pageNum, setPageNum} = useAnnotationsStore();
     return (
-        <div className="w-84 bg-gray-100 p-4 border-l flex flex-col shrink-0">
+        <div className="w-84 bg-gray-800 p-4 rounded-lg flex flex-col shrink-0">
                 <h2 className="text-lg font-bold mb-4 break-all">{image.Filename}</h2>
                 
                 {image.type === "pdf" && pdfDoc && (

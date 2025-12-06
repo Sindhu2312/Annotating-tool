@@ -1,6 +1,5 @@
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAnnotationsStore } from "../store/AnnotationsStore";
-import { useNavigate } from "react-router-dom";
 import * as pdfjsLib from "pdfjs-dist";
 import { RightPanel } from "./RightPanel/RightPanel";
 
@@ -9,8 +8,8 @@ const Annotatepage = () => {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const pdfCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const { drawing, setDrawing, 
-            image, pageNum, setPageNum, 
-            strokeColor, setStrokeColor, 
+            image,
+            strokeColor,
             pdfDoc, setPdfDoc,
             ctx, setCtx} = useAnnotationsStore();
 
@@ -202,7 +201,7 @@ const Annotatepage = () => {
                         className="relative select-none shadow rounded-lg w-[900px] h-[700px] max-w-full max-h-[calc(100vh-5rem)] overflow-y-auto "
                     >
                         <div className="relative w-full flex justify-center p-4">
-                            <div className="relative inline-block">
+                            <div className="relative inline-block bg-white">
                             {image.type === "image" && (
                                 <img
                                     ref={imgRef}
