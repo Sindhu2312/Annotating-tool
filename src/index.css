@@ -1,2 +1,51 @@
 @import "tailwindcss";
 
+@keyframes reveal {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.animate-typing {
+  position: relative;
+  display: inline-block;
+  font-family: monospace;
+  /* This is the key - we set the width from the start */
+}
+
+.animate-typing::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #1f2937; /* Match your background color */
+  animation: reveal 2s steps(17, end) forwards;
+}
+
+.blinking-cursor {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.blinking-cursor::after {
+  content: "|";
+  display: inline-block;
+  animation: blink 1s infinite;
+  margin-left: 2px;
+  font-weight: bold;
+}

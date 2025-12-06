@@ -14,12 +14,22 @@ const Annotatepage = () => {
             ctx, setCtx} = useAnnotationsStore();
 
     
-    const colors = [
-    { name: "Red", dot: "bg-red-500" },
-    { name: "Blue", dot: "bg-blue-500" },
-    { name: "Green", dot: "bg-green-500" },
-    { name: "Yellow", dot: "bg-yellow-500" },
-    ];
+        const colors = [
+            { name: "Red", dot: "bg-red-500", hex: "#ef4444" },
+            { name: "Blue", dot: "bg-blue-500", hex: "#3b82f6" },
+            { name: "Green", dot: "bg-green-500", hex: "#22c55e" },
+            { name: "Yellow", dot: "bg-yellow-500", hex: "#eab308" },
+            { name: "Purple", dot: "bg-purple-500", hex: "#a21caf" },
+            { name: "Orange", dot: "bg-orange-500", hex: "#f97316" },
+            { name: "Indigo", dot: "bg-indigo-500", hex: "#6366f1" },
+            { name: "Black", dot: "bg-black", hex: "#000000" },
+            { name: "White", dot: "bg-white", hex: "#ffffff" },
+            { name: "Cyan", dot: "bg-cyan-400", hex: "#22d3ee" },
+            { name: "Fuchsia", dot: "bg-fuchsia-500", hex: "#d946ef" },
+            { name: "Slate", dot: "bg-slate-500", hex: "#64748b" },
+            { name: "Emerald", dot: "bg-emerald-500", hex: "#10b981" },
+            { name: "Pink", dot: "bg-pink-500", hex: "#ec4899" },
+        ];
 
     const resizeCanvasToImage = () => {
         const canvas = canvasRef.current;
@@ -196,12 +206,12 @@ const Annotatepage = () => {
 
     return (
             <div className="flex h-screen overflow-hidden">
-                <div className="flex-1 p-4 flex items-center justify-center overflow-hidden min-w-0">
+                <div className="bg-gray-900 flex-1 p-4 flex items-center justify-center overflow-hidden min-w-0">
                     <div
-                        className="relative select-none shadow rounded-lg w-[900px] h-[700px] max-w-full max-h-[calc(100vh-5rem)] overflow-y-auto "
+                        className="relative select-none shadow rounded-lg w-[900px] h-[700px] max-w-full max-h-[calc(100vh-5rem)] overflow-y-auto overflow-x-hidden"
                     >
                         <div className="relative w-full flex justify-center p-4">
-                            <div className="relative inline-block bg-white">
+                            <div className="bg-white relative inline-block max-w-full">
                             {image.type === "image" && (
                                 <img
                                     ref={imgRef}
@@ -216,7 +226,7 @@ const Annotatepage = () => {
                             {image.type === "pdf" && (
                                 <canvas
                                     ref={pdfCanvasRef}
-                                    className="block max-w-full"
+                                    className="block w-full max-w-full"
                                     style={{ display: 'block' }}
                                 />
                             )}
@@ -235,7 +245,13 @@ const Annotatepage = () => {
                     </div>
                 </div>
             
-            <RightPanel colors={colors} canvasRef={canvasRef} renderPage={renderPage} />
+            <RightPanel 
+                colors={colors} 
+                canvasRef={canvasRef} 
+                renderPage={renderPage} 
+                pdfCanvasRef={pdfCanvasRef}
+                imgRef={imgRef}
+            />
         </div>
     )
 }
