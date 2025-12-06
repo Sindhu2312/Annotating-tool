@@ -8,7 +8,7 @@ function App() {
   return (
       <div className="flex flex-col h-screen overflow-hidden">
         <Navbar />
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden bg-gray-900">
           <Routes>
             <Route path="/" element={<Uploadpage/>} />
             {/* <Route path="/upload" element={<Uploadpage/>} /> */}

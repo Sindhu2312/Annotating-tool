@@ -16,10 +16,12 @@ const Uploadpage = () => {
         const reader = new FileReader();
 
         reader.onload = () => {
+            const fileType = file.type === "application/pdf" ? "pdf" : "image";
             setImage({
                 id: Date.now(),
                 Filename: file.name,
                 file: reader.result as string,
+                type: fileType,
             });
             navigate("/annotate");
         }
