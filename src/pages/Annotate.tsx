@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useAnnotationsStore } from "../store/AnnotationsStore";
 import * as pdfjsLib from "pdfjs-dist";
 import { RightPanel } from "./RightPanel/RightPanel";
+import colors from "./Colors/Colors";
 
 const Annotatepage = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -11,25 +12,35 @@ const Annotatepage = () => {
             image,
             strokeColor,
             pdfDoc, setPdfDoc,
-            ctx, setCtx} = useAnnotationsStore();
+            ctx, setCtx, savePageAnnotation, pageNum, getPageAnnotation } = useAnnotationsStore();
 
-    
-        const colors = [
-            { name: "Red", dot: "bg-red-500", hex: "#ef4444" },
-            { name: "Blue", dot: "bg-blue-500", hex: "#3b82f6" },
-            { name: "Green", dot: "bg-green-500", hex: "#22c55e" },
-            { name: "Yellow", dot: "bg-yellow-500", hex: "#eab308" },
-            { name: "Purple", dot: "bg-purple-500", hex: "#a21caf" },
-            { name: "Orange", dot: "bg-orange-500", hex: "#f97316" },
-            { name: "Indigo", dot: "bg-indigo-500", hex: "#6366f1" },
-            { name: "Black", dot: "bg-black", hex: "#000000" },
-            { name: "White", dot: "bg-white", hex: "#ffffff" },
-            { name: "Cyan", dot: "bg-cyan-400", hex: "#22d3ee" },
-            { name: "Fuchsia", dot: "bg-fuchsia-500", hex: "#d946ef" },
-            { name: "Slate", dot: "bg-slate-500", hex: "#64748b" },
-            { name: "Emerald", dot: "bg-emerald-500", hex: "#10b981" },
-            { name: "Pink", dot: "bg-pink-500", hex: "#ec4899" },
-        ];
+
+    const saveCurrentAnnotations = () => {
+        if (canvasRef.current && image?.type === 'pdf') {
+        const canvasData = canvasRef.current.toDataURL('image/png');
+        savePageAnnotation(pageNum, canvasData);
+        }
+    };
+
+    const loadAnnotations = async (pageNumber: number) => {
+        const savedData = getPageAnnotation(pageNumber);
+        if (!canvasRef.current) return;
+        
+        const drawCtx = canvasRef.current.getContext("2d");
+        if (!drawCtx) return;
+        
+        // Clear canvas first
+        drawCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        
+        // Load saved annotations if they exist
+        if (savedData) {
+        const img = new Image();
+        img.onload = () => {
+            drawCtx.drawImage(img, 0, 0);
+        };
+        img.src = savedData;
+        }
+    };
 
     const resizeCanvasToImage = () => {
         const canvas = canvasRef.current;
@@ -37,22 +48,21 @@ const Annotatepage = () => {
 
         if (!canvas || !img) return;
 
-        canvas.width = img.naturalWidth;  //original image size
-        canvas.height = img.naturalHeight;
+        // Set canvas size to match displayed image size
+        canvas.width = img.clientWidth;
+        canvas.height = img.clientHeight;
 
-        canvas.style.width = img.clientWidth + "px"; //displayed size of image
+        canvas.style.width = img.clientWidth + "px";
         canvas.style.height = img.clientHeight + "px";
 
-        canvas.style.left = img.offsetLeft + "px"; // distace from nearest parent 
+        // Position canvas exactly over image
+        canvas.style.position = 'absolute';
+        canvas.style.left = img.offsetLeft + "px";
         canvas.style.top = img.offsetTop + "px";
 
         const context = canvas.getContext("2d");
         if(context){
-            const scaleX =  img.naturalWidth / img.clientWidth;
-            const scaleY =  img.naturalHeight / img.clientHeight;
-            context.setTransform(scaleX, 0, 0, scaleY, 0, 0);  // b,c=0 undistored drawing
-            // e,f=0 no translation
-
+            context.setTransform(1, 0, 0, 1, 0, 0); // No scaling needed
             context.lineWidth = 3;
             context.lineJoin = "round";
             context.lineCap = "round";
@@ -61,25 +71,33 @@ const Annotatepage = () => {
     };
 
     const resizeCanvasToPDF = () => {
-        const canvas = canvasRef.current;
-        const pdfCanvas = pdfCanvasRef.current;
+    const canvas = canvasRef.current;
+    const pdfCanvas = pdfCanvasRef.current;
 
-        if (!canvas || !pdfCanvas) return;
+    if (!canvas || !pdfCanvas) return;
 
-        canvas.width = pdfCanvas.width;
-        canvas.height = pdfCanvas.height;
+    // Ensure exact match
+    canvas.width = pdfCanvas.width;
+    canvas.height = pdfCanvas.height;
 
-        canvas.style.width = pdfCanvas.style.width;
-        canvas.style.height = pdfCanvas.style.height;
+    canvas.style.width = pdfCanvas.clientWidth + "px";  // Use clientWidth
+    canvas.style.height = pdfCanvas.clientHeight + "px"; // Use clientHeight
 
-        const context = canvas.getContext("2d");
-        if(context){
-            context.lineWidth = 3;
-            context.lineJoin = "round";
-            context.lineCap = "round";
-            setCtx(context);
-        }
-    };
+    canvas.style.position = 'absolute';
+    canvas.style.left = '0';
+    canvas.style.top = '0';
+
+    const context = canvas.getContext("2d");
+    if(context) {
+        // Reset any previous transforms
+        context.resetTransform();
+        
+        context.lineWidth = 3;
+        context.lineJoin = "round";
+        context.lineCap = "round";
+        setCtx(context);
+    }
+};
 
     const loadPDF = async (fileData: string) => {
         try {
@@ -102,49 +120,58 @@ const Annotatepage = () => {
     };
 
     const renderPage = async (num: number, pdf = pdfDoc) => {
-        if (!pdf) return;
+    if (!pdf) return;
 
-        try {
-            const page = await pdf.getPage(num);
-            
-            // Calculate scale to fit width and allow vertical scroll
-            let scale = 1.0;
-            const baseViewport = page.getViewport({ scale: 1 });
-            const maxWidth = 850;
-            
-            // Scale to fit width, allow height to extend
-            scale = (maxWidth / baseViewport.width) * 1.3; // 1.3x for better zoom
-            scale = Math.min(scale, 2.0); // Cap at 2x
-            
-            const viewport = page.getViewport({ scale });
+    // SAVE current page annotations before switching
+    if (num !== pageNum && image?.type === 'pdf') {
+      saveCurrentAnnotations();
+    }
 
-            const canvas = pdfCanvasRef.current!;
-            const context = canvas.getContext("2d")!;
+    try {
+      const page = await pdf.getPage(num);
+      
+      let scale = 1.0;
+      const baseViewport = page.getViewport({ scale: 1 });
+      const maxWidth = 850;
+      
+      scale = (maxWidth / baseViewport.width) * 1.3;
+      scale = Math.min(scale, 2.0);
+      
+      const viewport = page.getViewport({ scale });
 
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+      const canvas = pdfCanvasRef.current!;
+      const context = canvas.getContext("2d")!;
 
-            // Clear canvas before rendering
-            context.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-            await page.render({ 
-                canvasContext: context,
-                viewport,
-            }).promise;
+      context.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Clear annotations when changing pages
-            if (canvasRef.current) {
-                const drawCtx = canvasRef.current.getContext("2d");
-                if (drawCtx) {
-                    drawCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                }
-            }
+      await page.render({ 
+        canvasContext: context,
+        viewport,
+      }).promise;
 
-            resizeCanvasToPDF();
-        } catch (error) {
-            console.error("Error rendering page:", error);
-        }
+      resizeCanvasToPDF();
+      
+      // LOAD annotations for the new page
+      setTimeout(() => {
+        loadAnnotations(num);
+      }, 100);
+      
+    } catch (error) {
+      console.error("Error rendering page:", error);
+    }
+  };
+
+  // ADD: Save annotations when component unmounts
+  useEffect(() => {
+    return () => {
+      if (image?.type === 'pdf') {
+        saveCurrentAnnotations();
+      }
     };
+  }, [pageNum]);
 
   useEffect(() => {
     if (image.type === "pdf") {
@@ -178,30 +205,50 @@ const Annotatepage = () => {
     };
   }, [image.type]);
 
-  const startDrawing = (e:any) => {
-    if (!ctx || !canvasRef.current) return;
-    setDrawing(true);
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.moveTo(
-      (e.clientX || e.touches[0].clientX) - rect.left,
-      (e.clientY || e.touches[0].clientY) - rect.top
-    );
-  };
+    const startDrawing = (e: any) => {
+        if (!ctx || !canvasRef.current) return;
+        setDrawing(true);
 
-  const draw = (e:any) => {
-    if (!drawing || !ctx || !canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        let x, y;
+        if (image.type === 'image' && imgRef.current) {
+            // Use canvas scaling (canvas overlays displayed image)
+            const scaleX = canvasRef.current.width / rect.width;
+            const scaleY = canvasRef.current.height / rect.height;
+            x = ((e.clientX || e.touches[0].clientX) - rect.left) * scaleX;
+            y = ((e.clientY || e.touches[0].clientY) - rect.top) * scaleY;
+        } else {
+            // Use canvas scaling (PDF)
+            const scaleX = canvasRef.current.width / rect.width;
+            const scaleY = canvasRef.current.height / rect.height;
+            x = ((e.clientX || e.touches[0].clientX) - rect.left) * scaleX;
+            y = ((e.clientY || e.touches[0].clientY) - rect.top) * scaleY;
+        }
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    ctx.strokeStyle = strokeColor;
+    const draw = (e: any) => {
+        if (!drawing || !ctx || !canvasRef.current) return;
 
-    ctx.lineTo(
-      (e.clientX || e.touches[0].clientX) - rect.left,
-      (e.clientY || e.touches[0].clientY) - rect.top
-    );
-    ctx.stroke();
-  };
+        const rect = canvasRef.current.getBoundingClientRect();
+        ctx.strokeStyle = strokeColor;
+        let x, y;
+        if (image.type === 'image' && imgRef.current) {
+            const scaleX = canvasRef.current.width / rect.width;
+            const scaleY = canvasRef.current.height / rect.height;
+            x = ((e.clientX || e.touches[0].clientX) - rect.left) * scaleX;
+            y = ((e.clientY || e.touches[0].clientY) - rect.top) * scaleY;
+        } else {
+            const scaleX = canvasRef.current.width / rect.width;
+            const scaleY = canvasRef.current.height / rect.height;
+            x = ((e.clientX || e.touches[0].clientX) - rect.left) * scaleX;
+            y = ((e.clientY || e.touches[0].clientY) - rect.top) * scaleY;
+        }
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    };
 
 
     return (
