@@ -76,27 +76,7 @@ export const RightPanel = ({ colors, canvasRef, renderPage, pdfCanvasRef, imgRef
                         Clear Annotations
                     </button>
                 </div>
-                {/* Show format selection only for PDFs, and trigger download on selection */}
-                {(open && image?.type === "pdf") && (
-                    <div className="mb-2 p-2 bg-gray-700 rounded">
-                        <p className="text-sm mb-1">Format:</p>
-                        <div className="flex gap-2">
-                        <button
-                            className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600"
-                            onClick={() => { setOpen(false); handleDownload('png'); }}
-                        >
-                            PNG
-                        </button>
-                        <button
-                            className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600"
-                            onClick={() => { setOpen(false); handleDownload('pdf'); }}
-                        >
-                            PDF
-                        </button>
-                        </div>
-                    </div>
-                )}
-                <div className="mt-auto">
+                <div className="mt-auto relative">
                     <button className="bg-fuchsia-950 rounded-xl px-4 py-2"
                         onClick={() => {
                             if (image?.type === 'pdf') {
@@ -107,6 +87,25 @@ export const RightPanel = ({ colors, canvasRef, renderPage, pdfCanvasRef, imgRef
                         }}>
                         Download
                     </button>
+                    {(open && image?.type === "pdf") && (
+                        <div className="absolute ml-30 bottom-0 p-2 bg-gray-700 rounded">
+                            <p className="text-sm mb-1">Format:</p>
+                            <div className="flex gap-2">
+                            <button
+                                className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600"
+                                onClick={() => { setOpen(false); handleDownload('png'); }}
+                            >
+                                PNG
+                            </button>
+                            <button
+                                className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600"
+                                onClick={() => { setOpen(false); handleDownload('pdf'); }}
+                            >
+                                PDF
+                            </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
     );
